@@ -3,6 +3,15 @@
 Automatically update the description for a Modrinth project from a markdown
 file in the repo.
 
+## Links
+
+In order to have images and links, you must use absolute urls, meaning
+don't use `img.png`, use `https://example.com/img.png`.
+
+For GitHub paths, you can use `https://raw.githubusercontent.com/<username>/<repo>/<branch>/<path>`.
+Ex: `img/screenshot.png` in my `worldedit-selection-viewer` repo on the
+`main` branch becomes `https://raw.githubusercontent.com/funnyboy-roks/worldedit-selection-viewer/main/img/screenshot.png`
+
 ## Front Matter
 
 If your readme contains front matter (either yaml or json), you can send
@@ -70,7 +79,7 @@ jobs:
     runs-on: 'ubuntu-latest'
     steps:
     - uses: actions/checkout@v3
-    - uses: funnyboy-roks/modrinth-auto-desc@v1
+    - uses: funnyboy-roks/modrinth-auto-desc@v1.5
       with:
         auth-token: ${{ secrets.MODRINTH_AUTH_TOKEN }}
         slug: 'mapify'
