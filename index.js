@@ -34,7 +34,7 @@ const main = async () => {
         // https://docs.modrinth.com/api-spec/#tag/projects/operation/modifyProject
         const req = await fetch(`https://api.modrinth.com/v2/project/${slug}`, {
             method: 'PATCH',
-            body: JSON.stringify(body),
+            body: JSON.stringify(modrinth),
             headers: {
                 Authorization: auth,
                 'content-type': 'Application/json',

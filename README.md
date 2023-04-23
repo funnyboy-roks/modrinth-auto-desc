@@ -13,7 +13,7 @@ All additional data can be found in the [Modrinth Docs](https://docs.modrinth.co
 
 ### Front Matter Format:
 
-```md
+```markdown
 ---
 {
     "modrinth": {
