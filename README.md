@@ -55,12 +55,7 @@ To get this, you need to:
 
 **Required**
 
-The slug or id used to identify the project on Modrinth.
-
-This is the part that you can type in the "URL" box in the settings.
-
-You can also use the `id` which can be found under the project
-information panel.
+This is the URL, slug, or id of the Modrinth project.
 
 ### `readme`
 

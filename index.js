@@ -4,35 +4,37 @@ import actions from '@actions/core';
 import fm from 'yaml-front-matter';
 
 const main = async () => {
-    const auth = actions.getInput('auth-token');
-    const slug = actions.getInput('slug');
-
-    actions.info(`Loading ${actions.getInput('readme')}.`);
-    const readme = await fs.readFile(actions.getInput('readme'), 'utf-8');
-
-    let frontMatter = fm.safeLoadFront(readme);
-
-    // use this since it removes the frontmatter
-    const content = frontMatter.__content.trim();
-
-    // Not elegant, but I'm happy with it
-    frontMatter.modrinth ||= {};
-
-    // We only care about stuff in the `modrinth` section
-    const { modrinth } = frontMatter;
-
-    // Prevent anybody from attempting change the description body
-    //
-    // This is a little confusing, because there is a key for modrinth called `discription` and one called `body`.
-    // The `body` key is the one which controls the markdown description, while the `description` controls the short description shown under the name.
-    if (modrinth.body) {
-        // Give a warning, but still continue
-        actions.warning('Ignoring `modrinth.body` in the front matter.  This field should not be set.');
-    }
-
-    modrinth.body = content;
-
     try {
+        const auth = actions.getInput('auth-token');
+        let slug = actions.getInput('slug');
+        // Grab the slug if it's a url
+        slug = slug.substring(slug.lastIndexOf('/') + 1);
+
+        actions.info(`Loading ${actions.getInput('readme')}.`);
+        const readme = await fs.readFile(actions.getInput('readme'), 'utf-8');
+
+        let frontMatter = fm.safeLoadFront(readme);
+
+        // use this since it removes the frontmatter
+        const content = frontMatter.__content.trim();
+
+        // Not elegant, but I'm happy with it
+        frontMatter.modrinth ||= {};
+
+        // We only care about stuff in the `modrinth` section
+        const { modrinth } = frontMatter;
+
+        // Prevent anybody from attempting change the description body
+        //
+        // This is a little confusing, because there is a key for modrinth called `discription` and one called `body`.
+        // The `body` key is the one which controls the markdown description, while the `description` controls the short description shown under the name.
+        if (modrinth.body) {
+            // Give a warning, but still continue
+            actions.warning('Ignoring `modrinth.body` in the front matter.  This field should not be set.');
+        }
+
+        modrinth.body = content;
+
         actions.info('Sending request to Modrinth...');
         // https://docs.modrinth.com/api-spec/#tag/projects/operation/modifyProject
         const req = await fetch(`https://api.modrinth.com/v2/project/${slug}`, {
