@@ -9,8 +9,6 @@ In order to have images and links, you must use absolute urls, meaning
 don't use `img.png`, use `https://example.com/img.png`.
 
 For GitHub paths, you can use `https://raw.githubusercontent.com/<username>/<repo>/<branch>/<path>`.
-Ex: `img/screenshot.png` in my `worldedit-selection-viewer` repo on the
-`main` branch becomes `https://raw.githubusercontent.com/funnyboy-roks/worldedit-selection-viewer/main/img/screenshot.png`
 
 ## Front Matter
 
@@ -21,6 +19,8 @@ All additional data can be found in the [Modrinth Docs](https://docs.modrinth.co
 *Note: The `body` key should not be specified and will be ignored if it is.*
 
 ### Front Matter Format:
+
+JSON:
 
 ```markdown
 ---
@@ -33,6 +33,15 @@ All additional data can be found in the [Modrinth Docs](https://docs.modrinth.co
 # Your content here...
 ```
 
+YAML:
+
+```markdown
+---
+modrinth:
+    source_url: 'https://github.com/funnyboy-roks/mapify'
+---
+# Your content here...
+```
 
 ## Inputs
 
