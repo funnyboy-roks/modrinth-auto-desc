@@ -1,5 +1,8 @@
 name: 'Modrinth auto description'
 description: 'Change the description for a modrinth project automatically from the README.md'
+author: funnyboy-roks
+icon: arrow-up-right
+color: green
 inputs:
   auth-token:
     description: 'The autorisation token that can be found in your Modrinth cookies'
