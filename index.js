@@ -15,6 +15,9 @@ const main = async () => {
     // use this since it removes the frontmatter
     const content = frontMatter.__content.trim();
 
+    // Not elegant, but I'm happy with it
+    frontMatter.modrinth ||= {};
+
     // We only care about stuff in the `modrinth` section
     const { modrinth } = frontMatter;
 
