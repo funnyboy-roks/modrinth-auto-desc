@@ -1,0 +1,16 @@
+name: 'Modrinth auto description'
+description: 'Change the description for a modrinth project automatically from the README.md'
+inputs:
+  auth-token:
+    description: 'The autorisation token that can be found in your Modrinth cookies'
+    required: true
+  slug:
+    description: 'The slug for the project.  This can also be the id'
+    required: true
+  readme:
+    description: 'The path to your repos readme, or the file that should be uploaded'
+    required: false
+    default: 'README.md'
+runs:
+  using: 'node16'
+  main: 'dist/index.js'
