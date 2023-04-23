@@ -48,7 +48,7 @@ jobs:
     runs-on: 'ubuntu-latest'
     steps:
     - uses: actions/checkout@v3
-    - uses: actions/modrinth-auto-desc@v1
+    - uses: funnyboy-roks/modrinth-auto-desc@v1
       with:
         auth-token: ${{ secrets.MODRINTH_AUTH_TOKEN }}
         slug: 'mapify'
