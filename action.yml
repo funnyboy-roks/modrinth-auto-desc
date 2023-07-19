@@ -1,15 +1,15 @@
-name: 'Modrinth auto description'
-description: 'Change the description for a modrinth project automatically from the README.md'
+name: 'Modrinth Auto-Description'
+description: 'Automatically update the description for a Modrinth project from a markdown file'
 author: funnyboy-roks
 inputs:
   auth-token:
     description: 'The autorisation token that can be found in your Modrinth cookies'
     required: true
   slug:
-    description: 'The slug for the project.  This can also be the id'
+    description: 'The url/slug/id for the project.'
     required: true
   readme:
-    description: 'The path to your repos readme, or the file that should be uploaded'
+    description: 'The path to the file to use for the description'
     required: false
     default: 'README.md'
 runs:

@@ -49,16 +49,13 @@ modrinth:
 
 **Required**
 
-The auth token to use for the Modrinth API  
+The auth token to use for the Modrinth API
 
-To get this, you need to:
-
-1. Sign into Modrinth
-2. Access your cookies (<kbd>Shift + F9</kbd> in FireFox, maybe something similar on
-   Chrome)
-3. Copy the `auth-token` cookie
-4. Put it in a [GitHub Secret](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
-5. You're done!
+To get this, you need to:  
+1. Go to https://modrinth.com/settings/account and sign in if you haven't
+1. Click "Copy token to clipboard" under Authorization Token
+1. Put it in a [GitHub Secret](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
+1. You're done!
 
 ### `slug`
 
