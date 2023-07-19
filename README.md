@@ -52,7 +52,7 @@ modrinth:
 The auth token to use for the Modrinth API
 
 To get this, you need to:  
-1. Go to https://modrinth.com/settings/account and sign in if you haven't
+1. Go to https://modrinth.com/settings/account and sign in if you aren't already
 1. Click "Copy token to clipboard" under Authorization Token
 1. Put it in a [GitHub Secret](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
 1. You're done!
