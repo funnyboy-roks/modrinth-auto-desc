@@ -52,8 +52,14 @@ modrinth:
 The auth token to use for the Modrinth API
 
 To get this, you need to:  
-1. Go to https://modrinth.com/settings/account and sign in if you aren't already
-1. Click "Copy token to clipboard" under Authorization Token
+1. Go to https://modrinth.com/settings/pats and sign in if you aren't already
+1. Click "Create a PAT" in the top-left corner
+1. Name it something that describes its purpose, i.e. "GitHub actions" or "Auto Description"
+1. Under scopes, find "Write Projects" and make sure it's checked
+1. Give it an expiration date -- Once this expiration date is reached, you'll need to generate a new token.
+    1. This is to ensure security.  Anybody with this token could do harm to your project(s).
+1. Press "Create PAT"
+1. The PAT you just created should appear with some random numbers and letters, copy that
 1. Put it in a [GitHub Secret](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
 1. You're done!
 

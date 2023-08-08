@@ -3,6 +3,8 @@ import fs from 'fs/promises';
 import actions from '@actions/core';
 import fm from 'yaml-front-matter';
 
+// See: https://docs.modrinth.com/api-spec/#tag/projects/operation/modifyProject
+
 const main = async () => {
     try {
         const auth = actions.getInput('auth-token');
@@ -18,11 +20,8 @@ const main = async () => {
         // use this since it removes the frontmatter
         const content = frontMatter.__content.trim();
 
-        // Not elegant, but I'm happy with it
-        frontMatter.modrinth ||= {};
-
-        // We only care about stuff in the `modrinth` section
-        const { modrinth } = frontMatter;
+        // Get the `modrinth` section or empty obj if it's not set
+        const modrinth = frontMatter.modrinth ?? {};
 
         // Prevent anybody from attempting change the description body
         //
@@ -45,6 +44,13 @@ const main = async () => {
                 'content-type': 'Application/json',
             },
         });
+
+        if (req.status == 401) { // Unauthorised -- probably not a PAT or invalid PAT
+            actions.setFailed('Unauthorised access to API.  Did you set the access token properly?');
+            // Should always be JSON if we get a 401
+            actions.error(JSON.stringify(await req.json(), null, 4));
+            return;
+        }
         
         actions.info('Modrinth response');
         const res = await req.text(); // Returns json, but not always, so text instead.
@@ -64,6 +70,8 @@ const main = async () => {
             help.push('Did you add `uses: actions/checkout@v3` to your workflow?');
             help.push(`Did you use the correct path in the config? Path specified: ${readme}`);
         }
+
+        help.push('If you are unable to find a solution, or you believe that this is a bug, you may file an issue at https://github.com/funnyboy-roks/modrinth-auto-desc/issues');
 
         help = help.map(l => '\t' + l).join('\n');
         actions.setFailed(`Action failed with error: ${err}.\n${help}`.trim());

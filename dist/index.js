@@ -14044,36 +14044,37 @@ var yamlFront = __nccwpck_require__(7774);
 
 
 
+// See: https://docs.modrinth.com/api-spec/#tag/projects/operation/modifyProject
+
 const main = async () => {
-    const auth = core.getInput('auth-token');
-    const slug = core.getInput('slug');
-
-    core.info(`Loading ${core.getInput('readme')}.`);
-    const readme = await promises_namespaceObject.readFile(core.getInput('readme'), 'utf-8');
-
-    let frontMatter = yamlFront.safeLoadFront(readme);
-
-    // use this since it removes the frontmatter
-    const content = frontMatter.__content.trim();
-
-    // Not elegant, but I'm happy with it
-    frontMatter.modrinth ||= {};
-
-    // We only care about stuff in the `modrinth` section
-    const { modrinth } = frontMatter;
-
-    // Prevent anybody from attempting change the description body
-    //
-    // This is a little confusing, because there is a key for modrinth called `discription` and one called `body`.
-    // The `body` key is the one which controls the markdown description, while the `description` controls the short description shown under the name.
-    if (modrinth.body) {
-        // Give a warning, but still continue
-        core.warning('Ignoring `modrinth.body` in the front matter.  This field should not be set.');
-    }
-
-    modrinth.body = content;
-
     try {
+        const auth = core.getInput('auth-token');
+        let slug = core.getInput('slug');
+        // Grab the slug if it's a url
+        slug = slug.substring(slug.lastIndexOf('/') + 1);
+
+        core.info(`Loading ${core.getInput('readme')}.`);
+        const readme = await promises_namespaceObject.readFile(core.getInput('readme'), 'utf-8');
+
+        let frontMatter = yamlFront.safeLoadFront(readme);
+
+        // use this since it removes the frontmatter
+        const content = frontMatter.__content.trim();
+
+        // Get the `modrinth` section or empty obj if it's not set
+        const modrinth = frontMatter.modrinth ?? {};
+
+        // Prevent anybody from attempting change the description body
+        //
+        // This is a little confusing, because there is a key for modrinth called `discription` and one called `body`.
+        // The `body` key is the one which controls the markdown description, while the `description` controls the short description shown under the name.
+        if (modrinth.body) {
+            // Give a warning, but still continue
+            core.warning('Ignoring `modrinth.body` in the front matter.  This field should not be set.');
+        }
+
+        modrinth.body = content;
+
         core.info('Sending request to Modrinth...');
         // https://docs.modrinth.com/api-spec/#tag/projects/operation/modifyProject
         const req = await fetch(`https://api.modrinth.com/v2/project/${slug}`, {
@@ -14084,6 +14085,13 @@ const main = async () => {
                 'content-type': 'Application/json',
             },
         });
+
+        if (req.status == 401) { // Unauthorised -- probably not a PAT or invalid PAT
+            core.setFailed('Unauthorised access to API.  Did you set the access token properly?');
+            // Should always be JSON if we get a 401
+            core.error(JSON.stringify(await req.json(), null, 4));
+            return;
+        }
         
         core.info('Modrinth response');
         const res = await req.text(); // Returns json, but not always, so text instead.
@@ -14103,6 +14111,8 @@ const main = async () => {
             help.push('Did you add `uses: actions/checkout@v3` to your workflow?');
             help.push(`Did you use the correct path in the config? Path specified: ${readme}`);
         }
+
+        help.push('If you are unable to find a solution, or you believe that this is a bug, you may file an issue at https://github.com/funnyboy-roks/modrinth-auto-desc/issues');
 
         help = help.map(l => '\t' + l).join('\n');
         core.setFailed(`Action failed with error: ${err}.\n${help}`.trim());
