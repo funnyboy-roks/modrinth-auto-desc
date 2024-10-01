@@ -12,6 +12,10 @@ const main = async () => {
         // Grab the slug if it's a url
         slug = slug.substring(slug.lastIndexOf('/') + 1);
 
+        //project-name for the user agent
+        let user_agent = actions.getInput("project-name")
+        user_agent = user_agent == "REPLACEME" ? slug : `${user_agent} (${slug})`
+
         actions.info(`Loading ${actions.getInput('readme')}.`);
         const readme = await fs.readFile(actions.getInput('readme'), 'utf-8');
 
@@ -42,7 +46,7 @@ const main = async () => {
             headers: {
                 Authorization: auth,
                 'content-type': 'Application/json',
-                'User-Agent': `${slug}` // https://docs.modrinth.com/#section/Identifiers Only a "good" user-agent but better than not supplying one. (using funnyboy-roks/modrinth-auto-desc GitHub Action) optionally could be included
+                'User-Agent': `${user_agent} via funnyboy-roks/modrinth-auto-desc`
             },
         });
 
@@ -52,18 +56,6 @@ const main = async () => {
             actions.error(JSON.stringify(await req.json(), null, 4));
             return;
         }
-
-        // Protoype retry code using modrinth's supplied rate limit headers.
-
-        // if (req.status == 429){ // Too many requests
-        //     let retryAfter = parseInt(req.headers.get('Retry-After'))
-        //     if (!isNaN(retryAfter)){
-        //         actions.warning(`Rate limit exceeded, backing off for ${retryAfter} seconds`)
-        //         await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
-        //     } else {
-        //         actions.setFailed("Rate limit exceeded, could not retry.")
-        //     }
-        // }
         
         actions.info('Modrinth response');
         const res = await req.text(); // Returns json, but not always, so text instead.
