@@ -3,7 +3,7 @@ import fs from 'fs/promises';
 import actions from '@actions/core';
 import fm from 'yaml-front-matter';
 
-// See: https://docs.modrinth.com/api-spec/#tag/projects/operation/modifyProject
+// See: https://docs.modrinth.com/#tag/projects/operation/modifyProject
 
 const main = async () => {
     try {
@@ -35,13 +35,14 @@ const main = async () => {
         modrinth.body = content;
 
         actions.info('Sending request to Modrinth...');
-        // https://docs.modrinth.com/api-spec/#tag/projects/operation/modifyProject
+        // https://docs.modrinth.com/#tag/projects/operation/modifyProject
         const req = await fetch(`https://api.modrinth.com/v2/project/${slug}`, {
             method: 'PATCH',
             body: JSON.stringify(modrinth),
             headers: {
                 Authorization: auth,
                 'content-type': 'Application/json',
+                'User-Agent': `${slug}` // https://docs.modrinth.com/#section/Identifiers Only a "good" user-agent but better than not supplying one. (using funnyboy-roks/modrinth-auto-desc GitHub Action) optionally could be included
             },
         });
 
@@ -51,6 +52,18 @@ const main = async () => {
             actions.error(JSON.stringify(await req.json(), null, 4));
             return;
         }
+
+        // Protoype retry code using modrinth's supplied rate limit headers.
+
+        // if (req.status == 429){ // Too many requests
+        //     let retryAfter = parseInt(req.headers.get('Retry-After'))
+        //     if (!isNaN(retryAfter)){
+        //         actions.warning(`Rate limit exceeded, backing off for ${retryAfter} seconds`)
+        //         await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+        //     } else {
+        //         actions.setFailed("Rate limit exceeded, could not retry.")
+        //     }
+        // }
         
         actions.info('Modrinth response');
         const res = await req.text(); // Returns json, but not always, so text instead.
