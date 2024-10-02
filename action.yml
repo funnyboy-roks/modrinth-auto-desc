@@ -12,6 +12,10 @@ inputs:
     description: 'The path to the file to use for the description'
     required: false
     default: 'README.md'
+  project-name:
+    description: 'Used in the user-agent for identification purposes'
+    required: false
+    default: '__unset'
 runs:
   using: 'node16'
   main: 'dist/index.js'

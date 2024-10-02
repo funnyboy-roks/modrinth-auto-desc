@@ -3,7 +3,7 @@ import fs from 'fs/promises';
 import actions from '@actions/core';
 import fm from 'yaml-front-matter';
 
-// See: https://docs.modrinth.com/api-spec/#tag/projects/operation/modifyProject
+// See: https://docs.modrinth.com/#tag/projects/operation/modifyProject
 
 const main = async () => {
     try {
@@ -11,6 +11,10 @@ const main = async () => {
         let slug = actions.getInput('slug');
         // Grab the slug if it's a url
         slug = slug.substring(slug.lastIndexOf('/') + 1);
+
+        //project-name for the user agent
+        let user_agent = actions.getInput("project-name")
+        user_agent = user_agent == '__unset' ? slug : `${user_agent} (${slug})`
 
         actions.info(`Loading ${actions.getInput('readme')}.`);
         const readme = await fs.readFile(actions.getInput('readme'), 'utf-8');
@@ -35,13 +39,14 @@ const main = async () => {
         modrinth.body = content;
 
         actions.info('Sending request to Modrinth...');
-        // https://docs.modrinth.com/api-spec/#tag/projects/operation/modifyProject
+        // https://docs.modrinth.com/#tag/projects/operation/modifyProject
         const req = await fetch(`https://api.modrinth.com/v2/project/${slug}`, {
             method: 'PATCH',
             body: JSON.stringify(modrinth),
             headers: {
                 Authorization: auth,
                 'content-type': 'Application/json',
+                'User-Agent': `${user_agent} via funnyboy-roks/modrinth-auto-desc`
             },
         });
 
