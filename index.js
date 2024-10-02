@@ -14,7 +14,7 @@ const main = async () => {
 
         //project-name for the user agent
         let user_agent = actions.getInput("project-name")
-        user_agent = user_agent == "REPLACEME" ? slug : `${user_agent} (${slug})`
+        user_agent = user_agent == '__unset' ? slug : `${user_agent} (${slug})`
 
         actions.info(`Loading ${actions.getInput('readme')}.`);
         const readme = await fs.readFile(actions.getInput('readme'), 'utf-8');
