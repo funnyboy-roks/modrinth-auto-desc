@@ -81,6 +81,7 @@ The path to the readme to fetch from the root of the GitHub repo.
 on:
   push:
     branches: [ main ]
+    paths: [ README.md ]
 jobs:
   modrinth-desc:
     runs-on: 'ubuntu-latest'
