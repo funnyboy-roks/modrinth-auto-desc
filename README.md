@@ -43,6 +43,18 @@ modrinth:
 # Your content here...
 ```
 
+## Excluded Sections
+
+You can exclude certain parts of your markdown from being included in the Modrinth description by wrapping them with special comments:
+
+```markdown
+<!-- MODRINTH_EXCLUDE_START -->
+This content will be excluded from the Modrinth description.
+<!-- MODRINTH_EXCLUDE_END -->
+```
+
+This is useful for hiding content that is only relevant for GitHub or other platforms but not for Modrinth.
+
 ## Inputs
 
 ### `auth-token`
