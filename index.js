@@ -1,9 +1,15 @@
-import fetch from 'node-fetch';
-import fs from 'fs/promises';
 import actions from '@actions/core';
+import fs from 'fs/promises';
+import fetch from 'node-fetch';
 import fm from 'yaml-front-matter';
 
 // See: https://docs.modrinth.com/#tag/projects/operation/modifyProject
+
+const removeExcludedSections = (text) => {
+    // Remove sections that are excluded from modrinth description
+    // Placeholder: <!-- MODRINTH_EXCLUDE_START --> ... <!-- MODRINTH_EXCLUDE_END -->
+    return text.replace(/<!--\s*MODRINTH_EXCLUDE_START\s*-->[\s\S]*?<!--\s*MODRINTH_EXCLUDE_END\s*-->/g, '');
+}
 
 const main = async () => {
     try {
@@ -22,7 +28,10 @@ const main = async () => {
         let frontMatter = fm.safeLoadFront(readme);
 
         // use this since it removes the frontmatter
-        const content = frontMatter.__content.trim();
+        const content = frontMatter.__content.trim() ?? '';
+
+        // replace excluded sections
+        const cleanedContent = removeExcludedSections(content);
 
         // Get the `modrinth` section or empty obj if it's not set
         const modrinth = frontMatter.modrinth ?? {};
@@ -33,10 +42,10 @@ const main = async () => {
         // The `body` key is the one which controls the markdown description, while the `description` controls the short description shown under the name.
         if (modrinth.body) {
             // Give a warning, but still continue
-            actions.warning('Ignoring `modrinth.body` in the front matter.  This field should not be set.');
+            actions.warning('Ignoring `modrinth.body` in the front matter.  This field should not be set.  Use `modrinth.description` to set the short description instead.');
         }
 
-        modrinth.body = content;
+        modrinth.body = cleanedContent;
 
         actions.info('Sending request to Modrinth...');
         // https://docs.modrinth.com/#tag/projects/operation/modifyProject
@@ -56,7 +65,7 @@ const main = async () => {
             actions.error(JSON.stringify(await req.json(), null, 4));
             return;
         }
-        
+
         actions.info('Modrinth response');
         const res = await req.text(); // Returns json, but not always, so text instead.
 

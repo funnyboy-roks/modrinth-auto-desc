@@ -11883,6 +11883,10 @@ var __webpack_exports__ = {};
 // This entry need to be wrapped in an IIFE because it need to be isolated against other modules in the chunk.
 (() => {
 
+// EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
+var core = __nccwpck_require__(2186);
+;// CONCATENATED MODULE: external "fs/promises"
+const promises_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("fs/promises");
 ;// CONCATENATED MODULE: external "node:http"
 const external_node_http_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("node:http");
 ;// CONCATENATED MODULE: external "node:https"
@@ -14032,10 +14036,6 @@ function fixResponseChunkedTransferBadEnding(request, errorCallback) {
 	});
 }
 
-;// CONCATENATED MODULE: external "fs/promises"
-const promises_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("fs/promises");
-// EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
-var core = __nccwpck_require__(2186);
 // EXTERNAL MODULE: ./node_modules/yaml-front-matter/dist/yamlFront.js
 var yamlFront = __nccwpck_require__(7774);
 ;// CONCATENATED MODULE: ./index.js
@@ -14044,7 +14044,13 @@ var yamlFront = __nccwpck_require__(7774);
 
 
 
-// See: https://docs.modrinth.com/api-spec/#tag/projects/operation/modifyProject
+// See: https://docs.modrinth.com/#tag/projects/operation/modifyProject
+
+const removeExcludedSections = (text) => {
+    // Remove sections that are excluded from modrinth description
+    // Placeholder: <!-- MODRINTH_EXCLUDE_START --> ... <!-- MODRINTH_EXCLUDE_END -->
+    return text.replace(/<!--\s*MODRINTH_EXCLUDE_START\s*-->[\s\S]*?<!--\s*MODRINTH_EXCLUDE_END\s*-->/g, '');
+}
 
 const main = async () => {
     try {
@@ -14053,13 +14059,20 @@ const main = async () => {
         // Grab the slug if it's a url
         slug = slug.substring(slug.lastIndexOf('/') + 1);
 
+        //project-name for the user agent
+        let user_agent = core.getInput("project-name")
+        user_agent = user_agent == '__unset' ? slug : `${user_agent} (${slug})`
+
         core.info(`Loading ${core.getInput('readme')}.`);
         const readme = await promises_namespaceObject.readFile(core.getInput('readme'), 'utf-8');
 
         let frontMatter = yamlFront.safeLoadFront(readme);
 
         // use this since it removes the frontmatter
-        const content = frontMatter.__content.trim();
+        const content = frontMatter.__content.trim() ?? '';
+
+        // replace excluded sections
+        const cleanedContent = removeExcludedSections(content);
 
         // Get the `modrinth` section or empty obj if it's not set
         const modrinth = frontMatter.modrinth ?? {};
@@ -14070,19 +14083,20 @@ const main = async () => {
         // The `body` key is the one which controls the markdown description, while the `description` controls the short description shown under the name.
         if (modrinth.body) {
             // Give a warning, but still continue
-            core.warning('Ignoring `modrinth.body` in the front matter.  This field should not be set.');
+            core.warning('Ignoring `modrinth.body` in the front matter.  This field should not be set.  Use `modrinth.description` to set the short description instead.');
         }
 
-        modrinth.body = content;
+        modrinth.body = cleanedContent;
 
         core.info('Sending request to Modrinth...');
-        // https://docs.modrinth.com/api-spec/#tag/projects/operation/modifyProject
+        // https://docs.modrinth.com/#tag/projects/operation/modifyProject
         const req = await fetch(`https://api.modrinth.com/v2/project/${slug}`, {
             method: 'PATCH',
             body: JSON.stringify(modrinth),
             headers: {
                 Authorization: auth,
                 'content-type': 'Application/json',
+                'User-Agent': `${user_agent} via funnyboy-roks/modrinth-auto-desc`
             },
         });
 
@@ -14092,7 +14106,7 @@ const main = async () => {
             core.error(JSON.stringify(await req.json(), null, 4));
             return;
         }
-        
+
         core.info('Modrinth response');
         const res = await req.text(); // Returns json, but not always, so text instead.
 
