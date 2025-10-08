@@ -14083,7 +14083,7 @@ const main = async () => {
         // The `body` key is the one which controls the markdown description, while the `description` controls the short description shown under the name.
         if (modrinth.body) {
             // Give a warning, but still continue
-            core.warning('Ignoring `modrinth.body` in the front matter.  This field should not be set. Use `modrinth.description` to set the short description instead.');
+            core.warning('Ignoring `modrinth.body` in the front matter.  This field should not be set.  Use `modrinth.description` to set the short description instead.');
         }
 
         modrinth.body = cleanedContent;
@@ -14106,7 +14106,7 @@ const main = async () => {
             core.error(JSON.stringify(await req.json(), null, 4));
             return;
         }
-        
+
         core.info('Modrinth response');
         const res = await req.text(); // Returns json, but not always, so text instead.
 

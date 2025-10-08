@@ -53,7 +53,7 @@ This content will be excluded from the Modrinth description.
 <!-- MODRINTH_EXCLUDE_END -->
 ```
 
-This is useful for hiding content that is only relevant for GitHub or other platforms but not for Modrinth.
+This is useful for hiding content that is only relevant for GitHub, such as development instructions.
 
 ## Inputs
 
