@@ -16,6 +16,10 @@ inputs:
     description: 'Used in the user-agent for identification purposes'
     required: false
     default: '__unset'
+  repo-token:
+    description: 'GitHub token for accessing repository information (needed for private repos)'
+    required: false
+    default: ''
 runs:
   using: 'node16'
   main: 'dist/index.js'
