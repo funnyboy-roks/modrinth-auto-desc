@@ -3,7 +3,7 @@ description: 'Automatically update the description for a Modrinth project from a
 author: funnyboy-roks
 inputs:
   auth-token:
-    description: 'The autorisation token that can be found in your Modrinth cookies'
+    description: 'The authorization token that can be found in your Modrinth cookies'
     required: true
   slug:
     description: 'The url/slug/id for the project.'
@@ -18,8 +18,6 @@ inputs:
     default: '__unset'
   repo-token:
     description: 'GitHub token for accessing repository information (needed for private repos)'
-    required: false
-    default: ''
 runs:
   using: 'node16'
   main: 'dist/index.js'

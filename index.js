@@ -1,44 +1,63 @@
 import coreActions from '@actions/core';
 import githubActions from '@actions/github';
-import fs from 'fs/promises';
 import fetch from 'node-fetch';
-import path from 'path';
 import fm from 'yaml-front-matter';
 
 // See: https://docs.modrinth.com/#tag/projects/operation/modifyProject
 
 const getGithubRawUrl = async (token) => {
-    // Get GitHub context
     const context = githubActions.context;
-    
-    // Extract owner and repo
-    const { owner, repo } = context.repo;
+    let { owner, repo } = context.repo;
 
-    // Get current branch
     let branch;
-    if (context.ref) {
-        // Remove 'refs/heads/' prefix for branches
+
+    // 1. Handle Pull Requests
+    if (context.ref && context.ref.startsWith('refs/pull/')) {
+        const pr = context.payload.pull_request;
+        if (!pr) {
+            throw new Error('Pull request data not available in context');
+        }
+
+        // Assuming `pr.head.ref` contains just the branch name (e.g., "feature-branch")
+        branch = pr.head.ref;
+
+        coreActions.info(`PR detected: branch = ${branch}, repo = ${owner}/${repo}`);
+    }
+    // 2. Handle branch pushes
+    else if (context.ref && context.ref.startsWith('refs/heads/')) {
         branch = context.ref.replace('refs/heads/', '');
-    } else {
-        // Fallback to default branch for events without refs (e.g., workflow_dispatch)
-        // Only use octokit if token is provided, otherwise default to 'main'
-        if (token) {
-            const octokit = githubActions.getOctokit(token);
-            const { data: repoData } = await octokit.rest.repos.get({
-                owner,
-                repo
-            });
-            branch = repoData.default_branch;
-        } else {
-            // Default to 'main' if no token available
+        coreActions.info(`Branch push: ${branch}`);
+    }
+    // 3. Handle tags
+    else if (context.ref && context.ref.startsWith('refs/tags/')) {
+        branch = context.ref.replace('refs/tags/', '');
+        coreActions.info(`Tag: ${branch}`);
+    }
+    // 4. Fallback to default branch
+    else {
+        if (!token) {
             branch = 'main';
-            coreActions.warning('No repo-token provided. Defaulting to "main" branch. If this is incorrect, please provide a repo-token.');
+            coreActions.warning(
+                `Cannot determine branch from ref "${context.ref}" and no repo-token provided. ` +
+                `Defaulting to "main". This may cause file resolution issues.`
+            );
+        } else {
+            const octokit = githubActions.getOctokit(token);
+            try {
+                const { data: repoData } = await octokit.rest.repos.get({ owner, repo });
+                branch = repoData.default_branch;
+                coreActions.info(`Using default branch: ${branch}`);
+            } catch (error) {
+                throw new Error(`Failed to get repository info: ${error.message}`);
+            }
         }
     }
 
-    // Construct raw.githubusercontent URL base
-    const rawUrlBase = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/`;
+    // URL-encode branch for special characters
+    const encodedBranch = encodeURIComponent(branch);
+    const rawUrlBase = `https://raw.githubusercontent.com/${owner}/${repo}/${encodedBranch}/`;
 
+    coreActions.info(`Raw URL base: ${rawUrlBase}`);
     return rawUrlBase;
 };
 
@@ -48,27 +67,34 @@ const cleanFilePath = (filePath) => {
 };
 
 const readReadmeFile = async (readmePath, token) => {
-    // Check if the path is an HTTPS URL
-    if (readmePath.startsWith('http://') || readmePath.startsWith('https://')) {
-        coreActions.info(`Loading readme from URL: ${readmePath}`);
-        const response = await fetch(readmePath);
-        if (!response.ok) {
-            throw new Error(`Failed to fetch readme from URL: ${response.status} ${response.statusText}`);
-        }
-        return await response.text();
-    } else {
-        // It's a relative file path - get GitHub raw URL for context
-        coreActions.info(`Loading readme from relative path: ${readmePath}`);
+    let url;
 
+    // Determine the URL to fetch from
+    if (readmePath.startsWith('http://') || readmePath.startsWith('https://')) {
+        url = readmePath;
+        coreActions.info(`Loading readme from URL: ${readmePath}`);
+    } else {
+        // For relative paths, construct GitHub raw URL
+        coreActions.info(`Loading readme from relative path: ${readmePath}`);
         const rawUrlBase = await getGithubRawUrl(token);
         const cleanedPath = cleanFilePath(readmePath);
-        const fullRawUrl = rawUrlBase + cleanedPath;
-        
-        coreActions.setOutput('raw-url', fullRawUrl);
-        coreActions.info(`Full Raw URL: ${fullRawUrl}`);
-
-        return await fs.readFile(readmePath, 'utf-8');
+        url = rawUrlBase + cleanedPath;
     }
+
+    // Add token as query parameter if provided
+    if (token) {
+        const urlObj = new URL(url);
+        urlObj.searchParams.set('token', token);
+        url = urlObj.toString();
+    }
+
+    // Fetch content from URL
+    coreActions.info(`Fetching from: ${url}`);
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error(`Failed to fetch readme from URL: ${response.status} ${response.statusText}`);
+    }
+    return await response.text();
 };
 
 const removeExcludedSections = (text) => {
@@ -90,11 +116,10 @@ const main = async () => {
         user_agent = user_agent == '__unset' ? slug : `${user_agent} (${slug})`
 
         const readmePath = coreActions.getInput('readme');
-        
-        // Get GitHub token from input (optional, needed for private repos)
+
         const repoToken = coreActions.getInput('repo-token');
 
-        // Read the readme file (handles both local paths and HTTPS URLs)
+        // Read the readme file (handle both local paths and HTTPS URLs)
         readme = await readReadmeFile(readmePath, repoToken);
 
         let frontMatter = fm.safeLoadFront(readme);
