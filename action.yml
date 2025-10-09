@@ -8,6 +8,10 @@ inputs:
   slug:
     description: 'The url/slug/id for the project.'
     required: true
+  branch:
+    description: 'The branch to operate on when updating the project description'
+    required: true
+    default: 'main'
   readme:
     description: 'The path to the file to use for the description'
     required: false
@@ -16,8 +20,6 @@ inputs:
     description: 'Used in the user-agent for identification purposes'
     required: false
     default: '__unset'
-  repo-token:
-    description: 'GitHub token for accessing repository information (needed for private repos)'
 runs:
   using: 'node16'
   main: 'dist/index.js'

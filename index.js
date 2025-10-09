@@ -1,60 +1,18 @@
 import coreActions from '@actions/core';
 import githubActions from '@actions/github';
+import fs from 'fs/promises';
 import fetch from 'node-fetch';
+import path from 'path';
 import fm from 'yaml-front-matter';
 
 // See: https://docs.modrinth.com/#tag/projects/operation/modifyProject
 
-const getGithubRawUrl = async (token) => {
+const getGithubRawUrl = async (branchName) => {
     const context = githubActions.context;
     let { owner, repo } = context.repo;
 
-    let branch;
-
-    // 1. Handle Pull Requests
-    if (context.ref && context.ref.startsWith('refs/pull/')) {
-        const pr = context.payload.pull_request;
-        if (!pr) {
-            throw new Error('Pull request data not available in context');
-        }
-
-        // Assuming `pr.head.ref` contains just the branch name (e.g., "feature-branch")
-        branch = pr.head.ref;
-
-        coreActions.info(`PR detected: branch = ${branch}, repo = ${owner}/${repo}`);
-    }
-    // 2. Handle branch pushes
-    else if (context.ref && context.ref.startsWith('refs/heads/')) {
-        branch = context.ref.replace('refs/heads/', '');
-        coreActions.info(`Branch push: ${branch}`);
-    }
-    // 3. Handle tags
-    else if (context.ref && context.ref.startsWith('refs/tags/')) {
-        branch = context.ref.replace('refs/tags/', '');
-        coreActions.info(`Tag: ${branch}`);
-    }
-    // 4. Fallback to default branch
-    else {
-        if (!token) {
-            branch = 'main';
-            coreActions.warning(
-                `Cannot determine branch from ref "${context.ref}" and no repo-token provided. ` +
-                `Defaulting to "main". This may cause file resolution issues.`
-            );
-        } else {
-            const octokit = githubActions.getOctokit(token);
-            try {
-                const { data: repoData } = await octokit.rest.repos.get({ owner, repo });
-                branch = repoData.default_branch;
-                coreActions.info(`Using default branch: ${branch}`);
-            } catch (error) {
-                throw new Error(`Failed to get repository info: ${error.message}`);
-            }
-        }
-    }
-
     // URL-encode branch for special characters
-    const encodedBranch = encodeURIComponent(branch);
+    const encodedBranch = encodeURIComponent(branchName);
     const rawUrlBase = `https://raw.githubusercontent.com/${owner}/${repo}/${encodedBranch}/`;
 
     coreActions.info(`Raw URL base: ${rawUrlBase}`);
@@ -66,36 +24,6 @@ const cleanFilePath = (filePath) => {
     return filePath.replace(/^\.\//, '');
 };
 
-const readReadmeFile = async (readmePath, token) => {
-    let url;
-
-    // Determine the URL to fetch from
-    if (readmePath.startsWith('http://') || readmePath.startsWith('https://')) {
-        url = readmePath;
-        coreActions.info(`Loading readme from URL: ${readmePath}`);
-    } else {
-        // For relative paths, construct GitHub raw URL
-        coreActions.info(`Loading readme from relative path: ${readmePath}`);
-        const rawUrlBase = await getGithubRawUrl(token);
-        const cleanedPath = cleanFilePath(readmePath);
-        url = rawUrlBase + cleanedPath;
-    }
-
-    // Add token as query parameter if provided
-    if (token) {
-        const urlObj = new URL(url);
-        urlObj.searchParams.set('token', token);
-        url = urlObj.toString();
-    }
-
-    // Fetch content from URL
-    coreActions.info(`Fetching from: ${url}`);
-    const response = await fetch(url);
-    if (!response.ok) {
-        throw new Error(`Failed to fetch readme from URL: ${response.status} ${response.statusText}`);
-    }
-    return await response.text();
-};
 
 const removeExcludedSections = (text) => {
     // Remove sections that are excluded from modrinth description
@@ -116,11 +44,11 @@ const main = async () => {
         user_agent = user_agent == '__unset' ? slug : `${user_agent} (${slug})`
 
         const readmePath = coreActions.getInput('readme');
+        const branch = coreActions.getInput('branch');
 
-        const repoToken = coreActions.getInput('repo-token');
-
-        // Read the readme file (handle both local paths and HTTPS URLs)
-        readme = await readReadmeFile(readmePath, repoToken);
+        // Read the readme file
+        coreActions.info(`Loading ${coreActions.getInput('readme')}.`);
+        readme = await fs.readFile(readmePath, 'utf-8');
 
         let frontMatter = fm.safeLoadFront(readme);
 
@@ -129,6 +57,28 @@ const main = async () => {
 
         // replace excluded sections
         const cleanedContent = removeExcludedSections(content);
+
+        // Replace relative image links with absolute raw github links
+        let finalContent = cleanedContent;
+        if (branch && branch.length > 0) {
+            const rawUrlBase = await getGithubRawUrl(branch);
+            const cleanedPath = cleanFilePath(readmePath);
+
+            // Get the directory of the readme file
+            const readmeDir = path.dirname(cleanedPath);
+
+            // This regex matches markdown image syntax ![alt text](image_url)
+            // Excludes absolute URLs (http/https) and root-relative paths (starting with /)
+            finalContent = cleanedContent.replace(/!\[([^\]]*)\]\((?!https?:\/\/|\/)([^)]+)\)/g, (match, altText, imgPath) => {
+                const normalizedPath = path.posix.normalize(path.posix.join(readmeDir, imgPath));
+                const absoluteUrl = new URL(normalizedPath, rawUrlBase).href;
+                return `![${altText}](${absoluteUrl})`;
+            });
+
+            coreActions.info('Converted relative image links to absolute links.');
+        } else {
+            coreActions.info('No branch specified, skipping conversion of relative image links.');
+        }
 
         // Get the `modrinth` section or empty obj if it's not set
         const modrinth = frontMatter.modrinth ?? {};
@@ -142,7 +92,7 @@ const main = async () => {
             coreActions.warning('Ignoring `modrinth.body` in the front matter.  This field should not be set.  Use `modrinth.description` to set the short description instead.');
         }
 
-        modrinth.body = cleanedContent;
+        modrinth.body = finalContent;
 
         coreActions.info('Sending request to Modrinth...');
         // https://docs.modrinth.com/#tag/projects/operation/modifyProject
