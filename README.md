@@ -17,7 +17,7 @@ For GitHub paths, you can use `https://raw.githubusercontent.com/<username>/<rep
 If your readme contains front matter (either yaml or json), you can send
 additional data to the Modrinth API.
 
-All additional data can be found in the [Modrinth Docs](https://docs.modrinth.com/#tag/projects/operation/modifyProject).
+All additional data can be found in the [Modrinth Docs](https://docs.modrinth.com/#tag/projects/operation/modifyProject). 
 *Note: The `body` key should not be specified and will be ignored if it is.*
 
 ### Front Matter Format:
@@ -65,7 +65,7 @@ This is useful for hiding content that is only relevant for GitHub, such as deve
 
 The auth token to use for the Modrinth API
 
-To get this, you need to:
+To get this, you need to: 
 1. Go to https://modrinth.com/settings/pats and sign in if you aren't already
 1. Click "Create a PAT" in the top-left corner
 1. Name it something that describes its purpose, i.e. "GitHub actions" or "Auto Description"
@@ -91,7 +91,7 @@ The path to the readme to fetch from the root of the GitHub repo.
 
 ### `branch`
 
-**Required**, default = `main`
+**Optional**, default = `main`
 
 The branch to use when generating absolute URLs for images and other relative links. This ensures that the correct version of your content is referenced. Note that content from private repositories will not be accessible on Modrinth regardless of the branch specified.
 
@@ -111,5 +111,4 @@ jobs:
       with:
         auth-token: ${{ secrets.MODRINTH_AUTH_TOKEN }}
         slug: 'mapify'
-        branch: 'master'
 ```

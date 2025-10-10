@@ -8,8 +8,7 @@ import fm from 'yaml-front-matter';
 // See: https://docs.modrinth.com/#tag/projects/operation/modifyProject
 
 const getGithubRawUrl = async (branchName) => {
-    const context = githubActions.context;
-    let { owner, repo } = context.repo;
+    const { owner, repo } = githubActions.context.repo;
 
     // URL-encode branch for special characters
     const encodedBranch = encodeURIComponent(branchName);
@@ -68,10 +67,12 @@ const main = async () => {
             const readmeDir = path.dirname(cleanedPath);
 
             // This regex matches markdown image syntax ![alt text](image_url)
-            // Excludes absolute URLs (http/https) and root-relative paths (starting with /)
-            finalContent = cleanedContent.replace(/!\[([^\]]*)\]\((?!https?:\/\/|\/)([^)]+)\)/g, (match, altText, imgPath) => {
+            // Excludes absolute URLs (http/https)
+            finalContent = cleanedContent.replace(/!\[([^\]]*)\]\((?!https?:\/\/)([^)]+)\)/g, (match, altText, imgPath) => {
                 const normalizedPath = path.posix.normalize(path.posix.join(readmeDir, imgPath));
                 const absoluteUrl = new URL(normalizedPath, rawUrlBase).href;
+
+                coreActions.info(`Converted image path: ${imgPath} -> ${absoluteUrl}`);
                 return `![${altText}](${absoluteUrl})`;
             });
 

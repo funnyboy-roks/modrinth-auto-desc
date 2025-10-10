@@ -42205,8 +42205,7 @@ var yamlFront = __nccwpck_require__(7774);
 // See: https://docs.modrinth.com/#tag/projects/operation/modifyProject
 
 const getGithubRawUrl = async (branchName) => {
-    const context = github.context;
-    let { owner, repo } = context.repo;
+    const { owner, repo } = github.context.repo;
 
     // URL-encode branch for special characters
     const encodedBranch = encodeURIComponent(branchName);
@@ -42265,10 +42264,12 @@ const main = async () => {
             const readmeDir = external_path_.dirname(cleanedPath);
 
             // This regex matches markdown image syntax ![alt text](image_url)
-            // Excludes absolute URLs (http/https) and root-relative paths (starting with /)
-            finalContent = cleanedContent.replace(/!\[([^\]]*)\]\((?!https?:\/\/|\/)([^)]+)\)/g, (match, altText, imgPath) => {
+            // Excludes absolute URLs (http/https)
+            finalContent = cleanedContent.replace(/!\[([^\]]*)\]\((?!https?:\/\/)([^)]+)\)/g, (match, altText, imgPath) => {
                 const normalizedPath = external_path_.posix.normalize(external_path_.posix.join(readmeDir, imgPath));
                 const absoluteUrl = new URL(normalizedPath, rawUrlBase).href;
+
+                core.info(`Converted image path: ${imgPath} -> ${absoluteUrl}`);
                 return `![${altText}](${absoluteUrl})`;
             });
 

@@ -10,7 +10,7 @@ inputs:
     required: true
   branch:
     description: 'The branch to operate on when updating the project description'
-    required: true
+    required: false
     default: 'main'
   readme:
     description: 'The path to the file to use for the description'
