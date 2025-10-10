@@ -18,7 +18,7 @@ If your readme contains front matter (either yaml or json), you can send
 additional data to the Modrinth API.
 
 All additional data can be found in the [Modrinth Docs](https://docs.modrinth.com/#tag/projects/operation/modifyProject).
-*Note: The `body` key should not be specified and will be ignored if it is.*
+*Note: The `body` key should not be specified and will be ignored if it is.*  
 
 ### Front Matter Format:
 
@@ -65,7 +65,7 @@ This is useful for hiding content that is only relevant for GitHub, such as deve
 
 The auth token to use for the Modrinth API
 
-To get this, you need to:
+To get this, you need to:  
 1. Go to https://modrinth.com/settings/pats and sign in if you aren't already
 1. Click "Create a PAT" in the top-left corner
 1. Name it something that describes its purpose, i.e. "GitHub actions" or "Auto Description"
