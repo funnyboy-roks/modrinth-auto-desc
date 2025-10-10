@@ -17,8 +17,8 @@ For GitHub paths, you can use `https://raw.githubusercontent.com/<username>/<rep
 If your readme contains front matter (either yaml or json), you can send
 additional data to the Modrinth API.
 
-All additional data can be found in the [Modrinth Docs](https://docs.modrinth.com/#tag/projects/operation/modifyProject).
-*Note: The `body` key should not be specified and will be ignored if it is.*  
+All additional data can be found in the [Modrinth Docs](https://docs.modrinth.com/#tag/projects/operation/modifyProject).  
+*Note: The `body` key should not be specified and will be ignored if it is.*
 
 ### Front Matter Format:
 
