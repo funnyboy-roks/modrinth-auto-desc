@@ -10,6 +10,8 @@ don't use `img.png`, use `https://example.com/img.png`.
 
 For GitHub paths, you can use `https://raw.githubusercontent.com/<username>/<repo>/<branch>/<path>`.
 
+> If the `branch` input is set, this action will attempt to resolve relative paths to point to your GitHub contents. If some images are not working on Modrinth, check the logs of the action to see exactly how paths are being resolved.
+
 ## Front Matter
 
 If your readme contains front matter (either yaml or json), you can send
@@ -86,6 +88,12 @@ This is the URL, slug, or id of the Modrinth project.
 **Optional**, default = `README.md`
 
 The path to the readme to fetch from the root of the GitHub repo.
+
+### `branch`
+
+**Optional**, default = `main`
+
+The branch to use when generating absolute URLs for images and other relative links. This ensures that the correct version of your content is referenced. Note that content from private repositories will not be accessible on Modrinth regardless of the branch specified.
 
 ## Example Usage
 
