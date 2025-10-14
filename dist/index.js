@@ -11063,6 +11063,14 @@ exports["default"] = _default;
 
 /***/ }),
 
+/***/ 716:
+/***/ ((module) => {
+
+module.exports = eval("require")("@actions/github");
+
+
+/***/ }),
+
 /***/ 9491:
 /***/ ((module) => {
 
@@ -11885,6 +11893,8 @@ var __webpack_exports__ = {};
 
 // EXTERNAL MODULE: ./node_modules/@actions/core/lib/core.js
 var core = __nccwpck_require__(2186);
+// EXTERNAL MODULE: ./node_modules/@vercel/ncc/dist/ncc/@@notfound.js?@actions/github
+var github = __nccwpck_require__(716);
 ;// CONCATENATED MODULE: external "fs/promises"
 const promises_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("fs/promises");
 ;// CONCATENATED MODULE: external "node:http"
@@ -14036,6 +14046,8 @@ function fixResponseChunkedTransferBadEnding(request, errorCallback) {
 	});
 }
 
+// EXTERNAL MODULE: external "path"
+var external_path_ = __nccwpck_require__(1017);
 // EXTERNAL MODULE: ./node_modules/yaml-front-matter/dist/yamlFront.js
 var yamlFront = __nccwpck_require__(7774);
 ;// CONCATENATED MODULE: ./index.js
@@ -14044,7 +14056,26 @@ var yamlFront = __nccwpck_require__(7774);
 
 
 
+
+
 // See: https://docs.modrinth.com/#tag/projects/operation/modifyProject
+
+const getGithubRawUrl = async (branchName) => {
+    const { owner, repo } = github.context.repo;
+
+    // URL-encode branch for special characters
+    const encodedBranch = encodeURIComponent(branchName);
+    const rawUrlBase = `https://raw.githubusercontent.com/${owner}/${repo}/${encodedBranch}/`;
+
+    core.info(`Raw URL base: ${rawUrlBase}`);
+    return rawUrlBase;
+};
+
+const cleanFilePath = (filePath) => {
+    // Remove leading ./ from paths like ./README.md or ./dist/README.md
+    return filePath.replace(/^\.\//, '');
+};
+
 
 const removeExcludedSections = (text) => {
     // Remove sections that are excluded from modrinth description
@@ -14053,6 +14084,7 @@ const removeExcludedSections = (text) => {
 }
 
 const main = async () => {
+    let readme;
     try {
         const auth = core.getInput('auth-token');
         let slug = core.getInput('slug');
@@ -14063,8 +14095,12 @@ const main = async () => {
         let user_agent = core.getInput("project-name")
         user_agent = user_agent == '__unset' ? slug : `${user_agent} (${slug})`
 
+        const readmePath = core.getInput('readme');
+        const branch = core.getInput('branch');
+
+        // Read the readme file
         core.info(`Loading ${core.getInput('readme')}.`);
-        const readme = await promises_namespaceObject.readFile(core.getInput('readme'), 'utf-8');
+        readme = await promises_namespaceObject.readFile(readmePath, 'utf-8');
 
         let frontMatter = yamlFront.safeLoadFront(readme);
 
@@ -14073,6 +14109,30 @@ const main = async () => {
 
         // replace excluded sections
         const cleanedContent = removeExcludedSections(content);
+
+        // Replace relative image links with absolute raw github links
+        let finalContent = cleanedContent;
+        if (branch && branch.length > 0) {
+            const rawUrlBase = await getGithubRawUrl(branch);
+            const cleanedPath = cleanFilePath(readmePath);
+
+            // Get the directory of the readme file
+            const readmeDir = external_path_.dirname(cleanedPath);
+
+            // This regex matches markdown image syntax ![alt text](image_url)
+            // Excludes absolute URLs (http/https)
+            finalContent = cleanedContent.replace(/!\[([^\]]*)\]\((?!https?:\/\/)([^)]+)\)/g, (match, altText, imgPath) => {
+                const normalizedPath = external_path_.posix.normalize(external_path_.posix.join(readmeDir, imgPath));
+                const absoluteUrl = new URL(normalizedPath, rawUrlBase).href;
+
+                core.info(`Converted image path: ${imgPath} -> ${absoluteUrl}`);
+                return `![${altText}](${absoluteUrl})`;
+            });
+
+            core.info('Converted relative image links to absolute links.');
+        } else {
+            core.info('No branch specified, skipping conversion of relative image links.');
+        }
 
         // Get the `modrinth` section or empty obj if it's not set
         const modrinth = frontMatter.modrinth ?? {};
@@ -14086,7 +14146,7 @@ const main = async () => {
             core.warning('Ignoring `modrinth.body` in the front matter.  This field should not be set.  Use `modrinth.description` to set the short description instead.');
         }
 
-        modrinth.body = cleanedContent;
+        modrinth.body = finalContent;
 
         core.info('Sending request to Modrinth...');
         // https://docs.modrinth.com/#tag/projects/operation/modifyProject

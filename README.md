@@ -3,12 +3,12 @@
 Automatically update the description for a Modrinth project from a markdown
 file in the repo.
 
-## Links
+## Images
 
-In order to have images and links, you must use absolute urls, meaning
-don't use `img.png`, use `https://example.com/img.png`.
-
-For GitHub paths, you can use `https://raw.githubusercontent.com/<username>/<repo>/<branch>/<path>`.
+If any images are specified specified using relative paths, this action
+will attempt to resolve them using the GitHub url on the branch set by
+the `branch` input.  If your images aren't showing up on Modrinth, check
+the action logs for the URLs that are being generated.
 
 ## Front Matter
 
@@ -86,6 +86,12 @@ This is the URL, slug, or id of the Modrinth project.
 **Optional**, default = `README.md`
 
 The path to the readme to fetch from the root of the GitHub repo.
+
+### `branch`
+
+**Optional**, default = `main`
+
+The branch to use when generating absolute URLs for images and other relative links. This ensures that the correct version of your content is referenced. Note that content from private repositories will not be accessible on Modrinth regardless of the branch specified.
 
 ## Example Usage
 
