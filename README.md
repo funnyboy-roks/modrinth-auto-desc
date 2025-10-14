@@ -3,14 +3,12 @@
 Automatically update the description for a Modrinth project from a markdown
 file in the repo.
 
-## Links
+## Images
 
-In order to have images and links, you must use absolute urls, meaning
-don't use `img.png`, use `https://example.com/img.png`.
-
-For GitHub paths, you can use `https://raw.githubusercontent.com/<username>/<repo>/<branch>/<path>`.
-
-> If the `branch` input is set, this action will attempt to resolve relative paths to point to your GitHub contents. If some images are not working on Modrinth, check the logs of the action to see exactly how paths are being resolved.
+If any images are specified specified using relative paths, this action
+will attempt to resolve them using the GitHub url on the branch set by
+the `branch` input.  If your images aren't showing up on Modrinth, check
+the action logs for the URLs that are being generated.
 
 ## Front Matter
 
