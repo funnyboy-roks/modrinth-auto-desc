@@ -27,6 +27,15 @@ const cleanFilePath = (filePath) => {
 const removeExcludedSections = (text) => {
     // Remove sections that are excluded from modrinth description
     // Placeholder: <!-- MODRINTH_EXCLUDE_START --> ... <!-- MODRINTH_EXCLUDE_END -->
+
+    // Check for unmatched tags
+    const startMatches = text.match(/<!--\s*MODRINTH_EXCLUDE_START\s*-->/g) || [];
+    const endMatches = text.match(/<!--\s*MODRINTH_EXCLUDE_END\s*-->/g) || [];
+
+    if (startMatches.length !== endMatches.length) {
+        throw new Error(`Unmatched MODRINTH_EXCLUDE tags found. Found ${startMatches.length} START tags and ${endMatches.length} END tags. Please ensure all MODRINTH_EXCLUDE_START tags have a corresponding MODRINTH_EXCLUDE_END tag.`);
+    }
+
     return text.replace(/<!--\s*MODRINTH_EXCLUDE_START\s*-->[\s\S]*?<!--\s*MODRINTH_EXCLUDE_END\s*-->/g, '');
 }
 
@@ -141,3 +150,4 @@ const main = async () => {
 };
 
 main();
+
