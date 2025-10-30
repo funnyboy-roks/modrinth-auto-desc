@@ -28,12 +28,32 @@ const removeExcludedSections = (text) => {
     // Remove sections that are excluded from modrinth description
     // Placeholder: <!-- MODRINTH_EXCLUDE_START --> ... <!-- MODRINTH_EXCLUDE_END -->
 
-    // Check for unmatched tags
-    const startMatches = text.match(/<!--\s*MODRINTH_EXCLUDE_START\s*-->/g) || [];
-    const endMatches = text.match(/<!--\s*MODRINTH_EXCLUDE_END\s*-->/g) || [];
+    // Check for unmatched tags and proper ordering
+    const tagRegex = /<!--\s*MODRINTH_EXCLUDE_(START|END)\s*-->/g;
+    const tags = [];
+    let match;
 
-    if (startMatches.length !== endMatches.length) {
-        throw new Error(`Unmatched MODRINTH_EXCLUDE tags found. Found ${startMatches.length} START tags and ${endMatches.length} END tags. Please ensure all MODRINTH_EXCLUDE_START tags have a corresponding MODRINTH_EXCLUDE_END tag.`);
+    while ((match = tagRegex.exec(text)) !== null) {
+        tags.push({
+            type: match[1],
+            index: match.index
+        });
+    }
+    
+    let depth = 0;
+    for (let i = 0; i < tags.length; i++) {
+        if (tags[i].type === 'START') {
+            depth++;
+        } else {
+            depth--;
+            if (depth < 0) {
+                throw new Error(`Invalid MODRINTH_EXCLUDE tag order: found MODRINTH_EXCLUDE_END at position ${tags[i].index} without a corresponding MODRINTH_EXCLUDE_START tag.`);
+            }
+        }
+    }
+
+    if (depth !== 0) {
+        throw new Error(`Unmatched MODRINTH_EXCLUDE tags found. Please ensure all MODRINTH_EXCLUDE_START tags have a corresponding MODRINTH_EXCLUDE_END tag.`);
     }
 
     return text.replace(/<!--\s*MODRINTH_EXCLUDE_START\s*-->[\s\S]*?<!--\s*MODRINTH_EXCLUDE_END\s*-->/g, '');
