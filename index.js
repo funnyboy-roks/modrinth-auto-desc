@@ -30,24 +30,16 @@ const removeExcludedSections = (text) => {
 
     // Check for unmatched tags and proper ordering
     const tagRegex = /<!--\s*MODRINTH_EXCLUDE_(START|END)\s*-->/g;
-    const tags = [];
     let match;
+    let depth = 0;
 
     while ((match = tagRegex.exec(text)) !== null) {
-        tags.push({
-            type: match[1],
-            index: match.index
-        });
-    }
-    
-    let depth = 0;
-    for (let i = 0; i < tags.length; i++) {
-        if (tags[i].type === 'START') {
+        if (match[1] === 'START') {
             depth++;
         } else {
             depth--;
             if (depth < 0) {
-                throw new Error(`Invalid MODRINTH_EXCLUDE tag order: found MODRINTH_EXCLUDE_END at position ${tags[i].index} without a corresponding MODRINTH_EXCLUDE_START tag.`);
+                throw new Error(`Invalid MODRINTH_EXCLUDE tag order: found MODRINTH_EXCLUDE_END at position ${match.index} without a corresponding MODRINTH_EXCLUDE_START tag.`);
             }
         }
     }
