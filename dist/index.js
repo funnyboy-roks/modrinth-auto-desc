@@ -42224,6 +42224,27 @@ const cleanFilePath = (filePath) => {
 const removeExcludedSections = (text) => {
     // Remove sections that are excluded from modrinth description
     // Placeholder: <!-- MODRINTH_EXCLUDE_START --> ... <!-- MODRINTH_EXCLUDE_END -->
+
+    // Check for unmatched tags and proper ordering
+    const tagRegex = /<!--\s*MODRINTH_EXCLUDE_(START|END)\s*-->/g;
+    let match;
+    let depth = 0;
+
+    while ((match = tagRegex.exec(text)) !== null) {
+        if (match[1] === 'START') {
+            depth++;
+        } else {
+            depth--;
+            if (depth < 0) {
+                throw new Error(`Invalid MODRINTH_EXCLUDE tag order: found MODRINTH_EXCLUDE_END at position ${match.index} without a corresponding MODRINTH_EXCLUDE_START tag.`);
+            }
+        }
+    }
+
+    if (depth !== 0) {
+        throw new Error(`Unmatched MODRINTH_EXCLUDE tags found. Please ensure all MODRINTH_EXCLUDE_START tags have a corresponding MODRINTH_EXCLUDE_END tag.`);
+    }
+
     return text.replace(/<!--\s*MODRINTH_EXCLUDE_START\s*-->[\s\S]*?<!--\s*MODRINTH_EXCLUDE_END\s*-->/g, '');
 }
 
@@ -42338,6 +42359,7 @@ const main = async () => {
 };
 
 main();
+
 
 })();
 
